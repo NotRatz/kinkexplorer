@@ -1,90 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chastity & Kink Tag Explorer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kink Artist Explorer</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #121212;
-      color: #eee;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      background: #1f1f1f;
-      margin: 0;
-      padding: 1rem;
-      text-align: center;
-      color: #ff66cc;
-    }
-    .table-container {
-      overflow-x: auto;
-      max-width: 100vw;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.85rem;
-    }
-    th, td {
-      border: 1px solid #333;
-      padding: 0.4rem;
-      text-align: center;
-    }
-    th {
-      position: sticky;
-      top: 0;
-      background: #2a2a2a;
-    }
-    td.true {
-      background: #ff66cc;
-      color: black;
-    }
-    td.false {
-      background: #1e1e1e;
-    }
-    tr:hover {
-      background-color: #333;
-    }
-    select {
-      margin: 1rem auto;
-      display: block;
-      padding: 0.4rem;
-      background: #2a2a2a;
-      color: white;
-      border: 1px solid #666;
-    }
+    body { font-family: sans-serif; background: #121212; color: #eee; margin: 0; padding: 0; }
+    h1 { background: linear-gradient(to right, #ff66cc, #aa88ff); margin: 0; padding: 1rem; text-align: center; color: white; font-weight: bold; }
+    .tab-buttons { display: flex; justify-content: center; gap: 1rem; background: #1e1e1e; padding: 1rem; flex-wrap: wrap; }
+    .tab-buttons button { padding: 0.5rem 1rem; border: none; background: #333; color: white; cursor: pointer; border-radius: 4px; }
+    .tab-buttons button.active { background: #ff66cc; color: black; font-weight: bold; }
+    .table-container { overflow-x: auto; max-width: 100vw; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+    th, td { border: 1px solid #333; padding: 0.3rem; text-align: center; }
+    th { position: sticky; top: 0; background: #2a2a2a; color: #ffb6ff; }
+    td.true { background: #ff66cc; color: black; font-weight: bold; box-shadow: inset 0 0 4px #fff; }
+    td.false { background: #1e1e1e; color: #666; }
+    tr:hover { background-color: #333; }
+    select { margin: 1rem auto; display: block; padding: 0.6rem; background: #2a2a2a; color: white; border: 1px solid #666; border-radius: 4px; font-size: 1rem; }
+    img.preview { width: 64px; height: auto; border-radius: 6px; border: 1px solid #555; }
+    .highlighted { background: #ffff99 !important; color: black !important; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>Chastity & Kink Artist Explorer</h1>
+  <h1>Kink Artist Explorer</h1>
+  <div class="tab-buttons">
+    <button onclick="switchCSV('data_chastity.csv', this)" class="active">Chastity Set</button>
+    <button onclick="switchCSV('data_ntr_condom.csv', this)">NTR + Cum Feeding</button>
+    <button onclick="switchCSV('flat_chastity_artists.csv', this)">Flat Chastity Artists</button>
+  </div>
   <select id="filter" onchange="applyFilter()">
     <option value="">-- Filter by Kink --</option>
   </select>
   <div class="table-container">
     <table id="kink-table"></table>
   </div>
-
   <script>
-    let csvURL = 'Chastity_Kink_Tag_Expanded_10Tags.csv';
-    let kinkData = [];
-    let headers = [];
+    let csvURL = 'data_chastity.csv', kinkData = [], headers = [];
 
-    fetch(csvURL)
-      .then(r => r.text())
-      .then(text => {
-        let rows = text.trim().split("\n").map(r => r.split(","));
-        headers = rows[0];
-        kinkData = rows.slice(1);
-        populateSelect();
-        buildTable();
-      });
+    function loadCSV(url) {
+      fetch(url)
+        .then(r => r.text())
+        .then(text => {
+          let rows = text.trim().split("\n").map(r => r.split(","));
+          headers = rows[0];
+          kinkData = rows.slice(1);
+          populateSelect();
+          buildTable();
+        });
+    }
+
+    function switchCSV(url, btn) {
+      document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      csvURL = url;
+      document.getElementById("filter").value = "";
+      loadCSV(csvURL);
+    }
 
     function populateSelect() {
       const select = document.getElementById("filter");
-      headers.slice(4).forEach(k => {
+      select.innerHTML = '<option value="">-- Filter by Kink --</option>';
+      headers.slice(6).forEach(k => {
         let opt = document.createElement("option");
         opt.value = k;
         opt.textContent = k;
@@ -111,8 +88,20 @@
         let tr = document.createElement("tr");
         row.forEach((val, i) => {
           let td = document.createElement("td");
-          td.textContent = val;
-          if (i >= 4) td.className = val === '1' ? 'true' : 'false';
+          if (headers[i] === "Image URL") {
+            let img = document.createElement("img");
+            img.src = val;
+            img.className = "preview";
+            td.appendChild(img);
+          } else {
+            td.textContent = val;
+            if (i >= 6) {
+              td.className = val === '1' ? 'true' : 'false';
+              if (headers[i] === filterKink && val === '1') {
+                td.classList.add('highlighted');
+              }
+            }
+          }
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -124,6 +113,8 @@
       const selected = document.getElementById("filter").value;
       buildTable(selected);
     }
+
+    loadCSV(csvURL);
   </script>
 </body>
 </html>
