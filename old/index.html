@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +7,7 @@
   <style>
     body { font-family: sans-serif; background: #121212; color: #eee; margin: 0; padding: 0; }
     h1 { background: linear-gradient(to right, #ff66cc, #aa88ff); margin: 0; padding: 1rem; text-align: center; color: white; font-weight: bold; }
-    .tab-buttons { display: flex; justify-content: center; gap: 1rem; background: #1e1e1e; padding: 1rem; }
+    .tab-buttons { display: flex; justify-content: center; gap: 1rem; background: #1e1e1e; padding: 1rem; flex-wrap: wrap; }
     .tab-buttons button { padding: 0.5rem 1rem; border: none; background: #333; color: white; cursor: pointer; border-radius: 4px; }
     .tab-buttons button.active { background: #ff66cc; color: black; font-weight: bold; }
     .table-container { overflow-x: auto; max-width: 100vw; }
@@ -28,6 +27,7 @@
   <div class="tab-buttons">
     <button onclick="switchCSV('data_chastity.csv', this)" class="active">Chastity Set</button>
     <button onclick="switchCSV('data_ntr_condom.csv', this)">NTR + Cum Feeding</button>
+    <button onclick="switchCSV('flat_chastity_artists.csv', this)">Flat Chastity Artists</button>
   </div>
   <select id="filter" onchange="applyFilter()">
     <option value="">-- Filter by Kink --</option>
