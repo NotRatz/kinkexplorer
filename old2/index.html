@@ -7,6 +7,9 @@
   <style>
     body { font-family: sans-serif; background: #121212; color: #eee; margin: 0; padding: 0; }
     h1 { background: linear-gradient(to right, #ff66cc, #aa88ff); margin: 0; padding: 1rem; text-align: center; color: white; font-weight: bold; }
+    .tab-buttons { display: flex; justify-content: center; gap: 1rem; background: #1e1e1e; padding: 1rem; flex-wrap: wrap; }
+    .tab-buttons button { padding: 0.5rem 1rem; border: none; background: #333; color: white; cursor: pointer; border-radius: 4px; }
+    .tab-buttons button.active { background: #ff66cc; color: black; font-weight: bold; }
     .table-container { overflow-x: auto; max-width: 100vw; }
     table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
     th, td { border: 1px solid #333; padding: 0.3rem; text-align: center; }
@@ -21,12 +24,15 @@
 </head>
 <body>
   <h1>Kink Artist Explorer</h1>
+  <div class="tab-buttons">
+    <button onclick="switchCSV('Filtered_Kink_Artist_Preview_List.csv', this)" class="active">Full Filtered Kink List</button>
+  </div>
   <select id="filter" multiple onchange="applyFilter()"></select>
   <div class="table-container">
     <table id="kink-table"></table>
   </div>
   <script>
-    let csvURL = 'data_chastity.csv', kinkData = [], headers = [], activeKinks = [];
+    let csvURL = 'Filtered_Kink_Artist_Preview_List.csv', kinkData = [], headers = [], activeKinks = [];
 
     function loadCSV(url) {
       fetch(url)
@@ -38,6 +44,14 @@
           populateSelect();
           buildTable();
         });
+    }
+
+    function switchCSV(url, btn) {
+      document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      csvURL = url;
+      document.getElementById("filter").value = "";
+      loadCSV(csvURL);
     }
 
     function populateSelect() {
