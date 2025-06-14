@@ -8,51 +8,66 @@
   <style>
     body { font-family: sans-serif; background: #121212; color: #eee; margin: 0; padding: 0; }
     h1 { background: linear-gradient(to right, #ff66cc, #aa88ff); margin: 0; padding: 1rem; text-align: center; color: white; font-weight: bold; }
-    .table-container { overflow-x: auto; max-width: 100vw; }
+    .table-container { overflow-x: auto; max-width: 100vw; padding: 0 1rem; }
     table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
     th, td { border: 1px solid #333; padding: 0.3rem; text-align: center; }
     th { position: sticky; top: 0; background: #2a2a2a; color: #ffb6ff; }
     td.true { background: #ff66cc; color: black; font-weight: bold; box-shadow: inset 0 0 4px #fff; }
     td.false { background: #1e1e1e; color: #666; }
     tr:hover { background-color: #333; }
-    #filter-container {
-      margin: 1rem auto;
-      width: 90%;
-      max-width: 600px;
-      background: #2a2a2a;
-      padding: 1rem;
-      border-radius: 10px;
-    }
-    #filter-search {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      border: 1px solid #666;
-      background: #1a1a1a;
+    .tag-button {
+      display: inline-block;
+      background: #444;
       color: white;
+      padding: 6px 12px;
+      margin: 4px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid #888;
     }
-    #filter-list label {
-      display: block;
-      margin: 4px 0;
+    .tag-button.selected {
+      background: #ff66cc;
+      color: black;
+      font-weight: bold;
+      border-color: white;
     }
-    img.preview { width: 64px; height: auto; border-radius: 6px; border: 1px solid #555; }
+    #tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 1rem auto;
+      max-width: 90%;
+    }
+    img.preview {
+      width: 64px;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid #555;
+      transition: transform 0.3s ease-in-out;
+      cursor: zoom-in;
+    }
+    img.preview.zoomed {
+      transform: scale(3);
+      z-index: 10;
+      position: relative;
+      cursor: zoom-out;
+    }
     .highlighted { background: #ffff99 !important; color: black !important; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>Kink Artist Explorer</h1>
-  <div id="filter-container">
-    <input id="filter-search" placeholder="Search kinks..." />
-    <div id="filter-list"></div>
-  </div>
+  <div id="tag-container"></div>
   <div class="table-container">
-    <div id="artist-cards"></div>
     <table id="kink-table"></table>
   </div>
   <script>
-    let csvURL = 'data_chastity.csv', kinkData = [], headers = [];
+    let csvURL = 'data_chastity.csv', kinkData = [], headers = [], selectedTags = [];
+
+    function encodeFileName(name) {
+      return encodeURIComponent(name).replace(/%20/g, '%2520');
+    }
 
     function loadCSV(url) {
       fetch(url)
@@ -61,69 +76,34 @@
           let rows = text.trim().split("\n").map(r => r.split(","));
           headers = rows[0];
           kinkData = rows.slice(1);
-          populateSelect();
+          renderTags();
           buildTable();
         });
     }
 
-    function populateSelect() {
-      const list = document.getElementById("filter-list");
-      const search = document.getElementById("filter-search");
-      list.innerHTML = '';
-
-      headers.slice(6).forEach(k => {
-        let label = document.createElement("label");
-        let cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.value = k;
-        cb.onchange = buildTable;
-        label.appendChild(cb);
-        label.appendChild(document.createTextNode(" " + k));
-        list.appendChild(label);
+    function renderTags() {
+      const container = document.getElementById("tag-container");
+      container.innerHTML = '';
+      headers.slice(6).forEach(tag => {
+        let btn = document.createElement("div");
+        btn.textContent = tag;
+        btn.className = "tag-button";
+        btn.onclick = () => {
+          if (selectedTags.includes(tag)) {
+            selectedTags = selectedTags.filter(t => t !== tag);
+            btn.classList.remove("selected");
+          } else {
+            selectedTags.push(tag);
+            btn.classList.add("selected");
+          }
+          buildTable();
+        };
+        container.appendChild(btn);
       });
-
-      search.oninput = function() {
-        const q = search.value.toLowerCase();
-        [...list.children].forEach(label => {
-          label.style.display = label.textContent.toLowerCase().includes(q) ? 'block' : 'none';
-        });
-      };
     }
 
     function buildTable() {
-      const selectedKinks = [...document.querySelectorAll("#filter-list input:checked")].map(cb => cb.value);
-      let cardContainer = document.getElementById("artist-cards");
-      cardContainer.innerHTML = "";
-
-      kinkData.forEach(row => {
-        let matches = selectedKinks.every(k => row[headers.indexOf(k)] === '1');
-        if (selectedKinks.length === 0 || matches) {
-          let name = row[headers.indexOf("Artist Name")];
-          let imgSrc = row[headers.indexOf("Image URL")];
-
-          let div = document.createElement("div");
-          div.style.margin = '10px';
-          div.style.display = 'inline-block';
-          div.style.textAlign = 'center';
-
-          let img = document.createElement("img");
-          img.src = imgSrc;
-          img.style.width = '128px';
-          img.style.borderRadius = '8px';
-
-          let caption = document.createElement("div");
-          caption.textContent = name;
-          caption.style.marginTop = '6px';
-          caption.style.fontWeight = 'bold';
-          caption.style.fontSize = '0.9rem';
-
-          div.appendChild(img);
-          div.appendChild(caption);
-          cardContainer.appendChild(div);
-        }
-      });
-
-      let table = document.getElementById("kink-table");
+      const table = document.getElementById("kink-table");
       table.innerHTML = "";
 
       let thead = document.createElement("thead");
@@ -138,21 +118,23 @@
 
       let tbody = document.createElement("tbody");
       kinkData.forEach(row => {
-        let matches = selectedKinks.every(k => row[headers.indexOf(k)] === '1');
-        if (selectedKinks.length === 0 || matches) {
+        let matches = selectedTags.every(k => row[headers.indexOf(k)] === '1');
+        if (selectedTags.length === 0 || matches) {
           let tr = document.createElement("tr");
           row.forEach((val, i) => {
             let td = document.createElement("td");
             if (headers[i] === "Image URL") {
               let img = document.createElement("img");
-              img.src = val;
+              let encoded = encodeFileName(val.split("/").pop());
+              img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${encoded}`;
               img.className = "preview";
+              img.onclick = () => img.classList.toggle("zoomed");
               td.appendChild(img);
             } else {
               td.textContent = val;
               if (i >= 6) {
                 td.className = val === '1' ? 'true' : 'false';
-                if (selectedKinks.includes(headers[i]) && val === '1') {
+                if (selectedTags.includes(headers[i]) && val === '1') {
                   td.classList.add('highlighted');
                 }
               }
