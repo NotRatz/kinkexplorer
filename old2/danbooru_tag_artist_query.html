@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danbooru Artist Query Tool</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 2rem; }
+    input, button, select { padding: 0.5rem; margin: 0.5rem 0; font-size: 1rem; }
+    #results { margin-top: 1rem; max-height: 400px; overflow-y: auto; border: 1px solid #333; padding: 1rem; }
+    .artist { padding: 0.2rem 0; border-bottom: 1px solid #444; }
+    .artist:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <h1>Danbooru Tag to Artist Query Tool</h1>
+  <label for="tag">Enter a Danbooru tag (e.g. netorare):</label><br>
+  <input type="text" id="tag" placeholder="netorare" />
+  <button onclick="queryArtists()">Query</button>
+  <button onclick="exportCSV()">Export to CSV</button>
+  <div id="results"></div>
+
+  <script>
+    async function queryArtists() {
+      const tag = document.getElementById('tag').value.trim();
+      const resultsBox = document.getElementById('results');
+      resultsBox.innerHTML = 'Loading...';
+      const artists = new Set();
+      let page = 1, done = false;
+
+      while (!done && page <= 10) {
+        const res = await fetch(`https://danbooru.donmai.us/posts.json?tags=${tag}+order:rank&limit=100&page=${page}`);
+        const data = await res.json();
+        if (!data.length) break;
+
+        data.forEach(post => {
+          if (post.tag_string_artist) {
+            post.tag_string_artist.split(' ').forEach(a => artists.add(a));
+          }
+        });
+        done = data.length < 100;
+        page++;
+      }
+
+      const list = Array.from(artists).sort();
+      resultsBox.innerHTML = `<strong>${list.length} artists found:</strong>` +
+        list.map(a => `<div class="artist">${a}</div>`).join('');
+      window.lastQueryResults = list.map(a => ({ artist: a, tag }));
+    }
+
+    function exportCSV() {
+      if (!window.lastQueryResults || !window.lastQueryResults.length) return alert('No results to export.');
+      const csvContent = "artist,matched_tag\n" + window.lastQueryResults.map(r => `${r.artist},${r.tag}`).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `danbooru_artists_${window.lastQueryResults[0].tag}.csv`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
