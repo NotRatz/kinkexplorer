@@ -15,33 +15,44 @@
     td.true { background: #ff66cc; color: black; font-weight: bold; box-shadow: inset 0 0 4px #fff; }
     td.false { background: #1e1e1e; color: #666; }
     tr:hover { background-color: #333; }
-    select {
-  margin: 1rem auto;
-  display: block;
-  padding: 1rem;
-  background: #2a2a2a;
-  color: white;
-  border: 1px solid #666;
-  border-radius: 8px;
-  font-size: 1rem;
-  width: 90%;
-  max-width: 600px;
-  height: 10rem;
-  overflow-y: auto;
-}
+    #filter-container {
+      margin: 1rem auto;
+      width: 90%;
+      max-width: 600px;
+      background: #2a2a2a;
+      padding: 1rem;
+      border-radius: 10px;
+    }
+    #filter-search {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #666;
+      background: #1a1a1a;
+      color: white;
+    }
+    #filter-list label {
+      display: block;
+      margin: 4px 0;
+    }
     img.preview { width: 64px; height: auto; border-radius: 6px; border: 1px solid #555; }
     .highlighted { background: #ffff99 !important; color: black !important; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>Kink Artist Explorer</h1>
-  <select id="filter" multiple onchange="applyFilter()"></select>
+  <div id="filter-container">
+    <input id="filter-search" placeholder="Search kinks..." />
+    <div id="filter-list"></div>
+  </div>
   <div class="table-container">
     <div id="artist-cards"></div>
     <table id="kink-table"></table>
   </div>
   <script>
-    let csvURL = 'data_chastity.csv', kinkData = [], headers = [], activeKinks = [];
+    let csvURL = 'data_chastity.csv', kinkData = [], headers = [];
 
     function loadCSV(url) {
       fetch(url)
@@ -56,18 +67,31 @@
     }
 
     function populateSelect() {
-      const select = document.getElementById("filter");
-      select.innerHTML = '';
+      const list = document.getElementById("filter-list");
+      const search = document.getElementById("filter-search");
+      list.innerHTML = '';
+
       headers.slice(6).forEach(k => {
-        let opt = document.createElement("option");
-        opt.value = k;
-        opt.textContent = k;
-        select.appendChild(opt);
+        let label = document.createElement("label");
+        let cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = k;
+        cb.onchange = buildTable;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(" " + k));
+        list.appendChild(label);
       });
+
+      search.oninput = function() {
+        const q = search.value.toLowerCase();
+        [...list.children].forEach(label => {
+          label.style.display = label.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+        });
+      };
     }
 
     function buildTable() {
-      const selectedKinks = Array.from(document.getElementById("filter").selectedOptions).map(o => o.value);
+      const selectedKinks = [...document.querySelectorAll("#filter-list input:checked")].map(cb => cb.value);
       let cardContainer = document.getElementById("artist-cards");
       cardContainer.innerHTML = "";
 
@@ -83,8 +107,7 @@
           div.style.textAlign = 'center';
 
           let img = document.createElement("img");
-          img.src = imgSrc.replace(/.*\/(?!.*\/)/, '').replace(/%2520/g, '%20');
-          img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${img.src}`;
+          img.src = imgSrc;
           img.style.width = '128px';
           img.style.borderRadius = '8px';
 
@@ -122,8 +145,7 @@
             let td = document.createElement("td");
             if (headers[i] === "Image URL") {
               let img = document.createElement("img");
-              img.src = val.replace(/.*\/(?!.*\/)/, '').replace(/%2520/g, '%20');
-              img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${img.src}`;
+              img.src = val;
               img.className = "preview";
               td.appendChild(img);
             } else {
@@ -141,10 +163,6 @@
         }
       });
       table.appendChild(tbody);
-    }
-
-    function applyFilter() {
-      buildTable();
     }
 
     loadCSV(csvURL);
