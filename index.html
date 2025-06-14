@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +15,20 @@
     td.true { background: #ff66cc; color: black; font-weight: bold; box-shadow: inset 0 0 4px #fff; }
     td.false { background: #1e1e1e; color: #666; }
     tr:hover { background-color: #333; }
-    select { margin: 1rem auto; display: block; padding: 0.6rem; background: #2a2a2a; color: white; border: 1px solid #666; border-radius: 4px; font-size: 1rem; }
+    select {
+  margin: 1rem auto;
+  display: block;
+  padding: 1rem;
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 90%;
+  max-width: 600px;
+  height: 10rem;
+  overflow-y: auto;
+}
     img.preview { width: 64px; height: auto; border-radius: 6px; border: 1px solid #555; }
     .highlighted { background: #ffff99 !important; color: black !important; font-weight: bold; }
   </style>
@@ -23,6 +37,7 @@
   <h1>Kink Artist Explorer</h1>
   <select id="filter" multiple onchange="applyFilter()"></select>
   <div class="table-container">
+    <div id="artist-cards"></div>
     <table id="kink-table"></table>
   </div>
   <script>
@@ -53,6 +68,38 @@
 
     function buildTable() {
       const selectedKinks = Array.from(document.getElementById("filter").selectedOptions).map(o => o.value);
+      let cardContainer = document.getElementById("artist-cards");
+      cardContainer.innerHTML = "";
+
+      kinkData.forEach(row => {
+        let matches = selectedKinks.every(k => row[headers.indexOf(k)] === '1');
+        if (selectedKinks.length === 0 || matches) {
+          let name = row[headers.indexOf("Artist Name")];
+          let imgSrc = row[headers.indexOf("Image URL")];
+
+          let div = document.createElement("div");
+          div.style.margin = '10px';
+          div.style.display = 'inline-block';
+          div.style.textAlign = 'center';
+
+          let img = document.createElement("img");
+          img.src = imgSrc.replace(/.*\/(?!.*\/)/, '').replace(/%2520/g, '%20');
+          img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${img.src}`;
+          img.style.width = '128px';
+          img.style.borderRadius = '8px';
+
+          let caption = document.createElement("div");
+          caption.textContent = name;
+          caption.style.marginTop = '6px';
+          caption.style.fontWeight = 'bold';
+          caption.style.fontSize = '0.9rem';
+
+          div.appendChild(img);
+          div.appendChild(caption);
+          cardContainer.appendChild(div);
+        }
+      });
+
       let table = document.getElementById("kink-table");
       table.innerHTML = "";
 
@@ -75,7 +122,8 @@
             let td = document.createElement("td");
             if (headers[i] === "Image URL") {
               let img = document.createElement("img");
-              img.src = val;
+              img.src = val.replace(/.*\/(?!.*\/)/, '').replace(/%2520/g, '%20');
+              img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${img.src}`;
               img.className = "preview";
               td.appendChild(img);
             } else {
